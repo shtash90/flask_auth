@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Kirish{% endblock %}
+{% block content %}
+<h2>Kirish</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.email.label }} {{ form.email(class="form-control") }}
+    {{ form.password.label }} {{ form.password(class="form-control") }}
+    <br>
+    {{ form.submit(class="btn btn-success") }}
+</form>
+<a href="{{ url_for('register') }}">Ro‘yxatdan o‘tish</a>
+{% endblock %}

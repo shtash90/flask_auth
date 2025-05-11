@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<h2>Profil sahifasi</h2>
+<ul>
+  <li><strong>Foydalanuvchi:</strong> {{ user.username }}</li>
+  <li><strong>Email:</strong> {{ user.email }}</li>
+</ul>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Orqaga</a>
+{% endblock %}
