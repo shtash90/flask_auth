@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Profilni tahrirlash{% endblock %}
+{% block content %}
+<h2>Profilni tahrirlash</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.username.label }} {{ form.username(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.email.label }} {{ form.email(class="form-control") }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+<a href="{{ url_for('profile') }}" class="btn btn-link mt-3">⬅️ Orqaga</a>
+{% endblock %}

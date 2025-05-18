@@ -9,7 +9,14 @@ from wtforms.validators import InputRequired, Email, Length
 import os
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.validators import InputRequired, Email
+from wtforms import PasswordField
+from wtforms.validators import EqualTo
+from flask_admin import Admin, AdminIndexView, expose
+from flask_admin.contrib.sqla import ModelView
+from flask_login import current_user
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
@@ -37,6 +44,32 @@ class LoginForm(FlaskForm):
     email = StringField("Email", validators=[InputRequired(), Email()])
     password = PasswordField("Parol", validators=[InputRequired()])
     submit = SubmitField("Kirish")
+
+class EditProfileForm(FlaskForm):
+    username = StringField("Yangi foydalanuvchi nomi", validators=[InputRequired()])
+    email = StringField("Yangi email", validators=[InputRequired(), Email()])
+    submit = SubmitField("Saqlash")
+
+
+class ChangePasswordForm(FlaskForm):
+    old_password = PasswordField("Eski parol", validators=[InputRequired()])
+    new_password = PasswordField("Yangi parol", validators=[InputRequired(), Length(min=6)])
+    confirm_password = PasswordField("Yangi parol (tasdiqlang)", validators=[
+        InputRequired(), EqualTo('new_password', message="Parollar mos emas")])
+    submit = SubmitField("Parolni o‘zgartirish")
+
+# 🔒 Custom admin panelni faqat adminlarga ruxsat beramiz
+class AdminOnlyView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+class AdminHome(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            return redirect(url_for('login'))
+        return super().index()
+
 
 # 🔽 Routes
 @app.route('/')
@@ -83,11 +116,47 @@ def logout():
 def profile():
     return render_template('profile.html', user=current_user)
 
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash("Profil yangilandi!", "success")
+        return redirect(url_for('profile'))
+
+    # Avvalgi qiymatlarni forma ichiga to‘ldirib ko‘rsatamiz
+    form.username.data = current_user.username
+    form.email.data = current_user.email
+    return render_template('edit_profile.html', form=form)
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+
+    if form.validate_on_submit():
+        if check_password_hash(current_user.password, form.old_password.data):
+            hashed = generate_password_hash(form.new_password.data)
+            current_user.password = hashed
+            db.session.commit()
+            flash("Parol muvaffaqiyatli o‘zgartirildi!", "success")
+            return redirect(url_for('profile'))
+        else:
+            flash("Eski parol noto‘g‘ri!", "danger")
+
+    return render_template('change_password.html', form=form)
 
 # Baza va ilova yaratilib bo‘lgandan keyin:
-admin = Admin(app, name="Admin Panel", template_mode='bootstrap4')
-admin.add_view(ModelView(User, db.session))
+# admin = Admin(app, name="Admin Panel", template_mode='bootstrap4')
+# admin.add_view(ModelView(User, db.session))
 
+# Admin panel sozlamasi
+admin = Admin(app, name="Admin Panel", template_mode='bootstrap4', index_view=AdminHome(), url="/admin_panel", endpoint="admin_panel")
+admin.add_view(AdminOnlyView(User, db.session))
 
 # 🧱 Baza yaratish
 with app.app_context():
