@@ -155,7 +155,7 @@ def change_password():
 # admin.add_view(ModelView(User, db.session))
 
 # Admin panel sozlamasi
-admin = Admin(app, name="Admin Panel", template_mode='bootstrap4', index_view=AdminHome(), url="/admin_panel", endpoint="admin_panel")
+admin = Admin(app, name="Admin Panel", template_mode='bootstrap4', index_view=AdminHome())
 admin.add_view(AdminOnlyView(User, db.session))
 
 # 🧱 Baza yaratish
